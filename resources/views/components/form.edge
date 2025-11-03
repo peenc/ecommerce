@@ -1,0 +1,5 @@
+<form {{ $props.except(['method']).toAttrs() }} method="{{ method ? method : 'POST' }}">
+  {{ csrfField() }}
+
+  {{{ await $slots.main() }}}
+</form>

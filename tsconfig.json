@@ -1,0 +1,15 @@
+{
+  "extends": "@adonisjs/tsconfig/tsconfig.app.json",
+   "include": [
+    "start",
+    "app",
+    "config",
+    "database",
+    "contracts"
+  ],
+  "compilerOptions": {
+    "rootDir": "./",
+    "outDir": "./build"
+  }
+ 
+}
