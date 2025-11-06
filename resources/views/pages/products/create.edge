@@ -1,4 +1,4 @@
-@layout.app({ title: 'oi' })
+@layout.app({ title: 'Criar ou editar Produto' })
   @slot('main')
     @let(url = product ? route('products.update', { id: product.id }, { qs: { _method: 'PUT' } }) : route('products.store'))
 
@@ -41,9 +41,12 @@
             </div>
 
             @!textarea({
-              name: 'description',
-              value: product?.description || ''
-            })
+            name: 'description',
+            value: product?.description || '',
+            class: 'w-full border border-gray-300 rounded-lg p-2 focus:border-indigo-500 focus:ring-indigo-500',
+            placeholder: 'Descrição do produto...'
+             })
+
           </div>
         </div>
       </div>

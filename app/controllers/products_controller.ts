@@ -32,26 +32,38 @@ export default class ProductsController {
   }
 
   public async store({ request, response }: HttpContext) {
+  console.log('📦 Recebendo requisição de criação de produto...')
+  try {
     const payload = await request.validateUsing(createProductValidator)
+    console.log('✅ Validação passou:', payload)
 
     const product = await Product.create({
       name: payload.name,
       description: payload.description,
       price: payload.price,
     })
+    console.log('✅ Produto criado no banco:', product)
 
     const image = new Image()
     image.name = `${cuid()}.${payload.image.extname}`
     image.productId = product.id
+    console.log('🖼️ Preparando upload da imagem:', image.name)
 
     await payload.image.move(app.makePath('tmp/uploads'), {
       name: image.name,
     })
+    console.log('✅ Imagem movida para tmp/uploads')
 
     await image.save()
+    console.log('✅ Imagem salva no banco:', image)
 
     return response.redirect().toRoute('products.show', { id: product.id })
+  } catch (error) {
+    console.error('❌ Erro ao criar produto:', error)
+    return response.badRequest('Erro ao criar produto')
   }
+}
+
 
   public async update({ params, request, response }: HttpContext) {
     const product = await Product.findOrFail(params.id)

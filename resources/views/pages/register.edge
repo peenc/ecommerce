@@ -1,0 +1,54 @@
+@layout.app({ title: 'Registrar' })
+
+@slot('main')
+<div class="max-w-md mx-auto mt-12 bg-white p-8 rounded-lg shadow-md">
+  <h1 class="text-2xl font-bold mb-6 text-center">Criar Conta</h1>
+
+  @if(session.has('errors'))
+  <div class="bg-red-100 text-red-700 p-3 rounded mb-4">
+    <ul>
+      @each(error in session.get('errors'))
+        <li>{{ error.message }}</li>
+      @endeach
+    </ul>
+  </div>
+@endif
+
+
+  @if(session.has('success'))
+    <div class="p-2 mb-4 text-sm text-green-600 bg-green-100 rounded">
+      {{ session.get('success') }}
+    </div>
+  @endif
+
+  @form({ method: 'POST', action: route('auth.register') })
+  
+  <div class="mb-4">
+    <label for="fullName" class="block mb-1 font-medium text-gray-700">Nome completo</label>
+    <input type="text" name="fullName" id="fullName" required class="w-full px-3 py-2 border rounded-lg">
+  </div>
+
+  <div class="mb-4">
+    <label for="email" class="block mb-1 font-medium text-gray-700">Email</label>
+    <input type="email" name="email" id="email" required class="w-full px-3 py-2 border rounded-lg">
+  </div>
+
+  <div class="mb-6">
+    <label for="password" class="block mb-1 font-medium text-gray-700">Senha</label>
+    <input type="password" name="password" id="password" required class="w-full px-3 py-2 border rounded-lg">
+  </div>
+
+  @button({ type: 'submit', class: 'w-full' })
+    <span>Cadastrar</span>
+  @end
+@end
+
+
+
+  <p class="mt-4 text-sm text-center">
+    Já tem uma conta?
+    <a href="{{ route('auth.login.show') }}" class="text-blue-600 hover:underline">Entrar</a>
+  </p>
+</div>
+@end
+@end

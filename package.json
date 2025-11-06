@@ -61,7 +61,7 @@
     "@tailwindcss/vite": "^4.1.13",
     "@vinejs/vine": "^3.0.1",
     "basecoat-css": "^0.3.2",
-    "better-sqlite3": "^12.2.0",
+    "better-sqlite3": "^12.4.1",
     "edge.js": "^6.2.1",
     "luxon": "^3.7.1",
     "reflect-metadata": "^0.2.2",
