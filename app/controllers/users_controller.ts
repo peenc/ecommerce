@@ -1,17 +1,24 @@
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class UsersController {
-  async edit({ view, auth }: HttpContext) {
-    const user = auth.user
-    return view.render('pages/profile', { user })
+  
+ public async edit({ view, auth, response }: HttpContextContract) {
+    try {
+      await auth.authenticate()
+      const user = auth.user!
+      return view.render('pages/users/profile', { user })
+    } catch {
+      return response.redirect().toRoute('auth.login.show')
+    }
   }
 
-  async update({ request, auth, response }: HttpContext) {
+  public async update({ request, auth, response }: HttpContextContract) {
+    //await auth.authenticate()
     const user = auth.user!
-    const data = request.only(['email'])
+    const data = request.only(['fullName', 'email'])
     user.merge(data)
     await user.save()
-    return response.redirect('/profile')
+    return response.redirect().toRoute('user.profile.edit')
   }
 }
 
