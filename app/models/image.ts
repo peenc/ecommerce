@@ -8,7 +8,7 @@ export default class Image extends BaseModel {
   @column()
   declare name: string
 
-  @column()
+  @column({ columnName: 'product_id' })
   declare productId: number
 
   @column.dateTime({ autoCreate: true })

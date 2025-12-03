@@ -13,7 +13,7 @@ export default class UsersController {
   }
 
   public async update({ request, auth, response }: HttpContextContract) {
-    //await auth.authenticate()
+    await auth.authenticate()
     const user = auth.user!
     const data = request.only(['fullName', 'email'])
     user.merge(data)

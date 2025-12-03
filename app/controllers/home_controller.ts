@@ -3,10 +3,13 @@ import Product from '#models/product'
 
 export default class HomeController {
   public async index({ view, auth }: HttpContext) {
+    await auth.authenticate()
+
     const products = await Product.query().preload('images')
+    
     return view.render('pages/home', {
       products,
-      authUser: auth.user // 🔑 Passa o usuário logado
+      auth: { user: auth.user || null },
     })
   }
 }

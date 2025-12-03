@@ -13,6 +13,8 @@ export default class extends BaseSchema {
 
       table.timestamp('created_at').defaultTo(this.now())
       table.timestamp('updated_at').defaultTo(this.now())
+      table.integer('stock').notNullable().defaultTo(0)
+
     })
   }
 

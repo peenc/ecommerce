@@ -1,10 +1,13 @@
 import router from '@adonisjs/core/services/router'
+import { middleware } from '#start/kernel'
+
 
 const AuthController = () => import('#controllers/auth_controller')
 const UsersController = () => import('#controllers/users_controller')
 const ProductsController = () => import('#controllers/products_controller')
 const ImagesController = () => import('#controllers/images_controller')
 const HomeController = () => import('#controllers/home_controller')
+const CartController = () => import('#controllers/cart_controller')
 
 /*
 |--------------------------------------------------------------------------
@@ -31,8 +34,15 @@ router.post('/logout', [AuthController, 'logout']).as('auth.logout')
 | Perfil do usuário
 |--------------------------------------------------------------------------
 */
-router.get('/profile', [UsersController, 'edit']).as('user.profile.edit')
-router.post('/profile', [UsersController, 'update']).as('user.profile.update')
+router
+  .get('/profile', [UsersController, 'edit'])
+  .use(middleware.auth())
+  .as('user.profile.edit')
+
+router
+  .post('/profile', [UsersController, 'update'])
+  .use(middleware.auth())
+  .as('user.profile.update')
 
 /*
 |--------------------------------------------------------------------------
@@ -49,4 +59,22 @@ router.resource('/products', ProductsController).as('products')
 router.get('/images/:name', [ImagesController, 'show']).as('images.show')
 
 
+/*
+|--------------------------------------------------------------------------
+| Carrinho
+|--------------------------------------------------------------------------
+*/
+router
+  .get('/cart', [CartController, 'show'])
+  .use(middleware.auth())
+  .as('cart.show')
 
+router
+  .post('/cart/add', [CartController, 'add'])
+  .use(middleware.auth())
+  .as('cart.add')
+
+router
+  .post('/cart/remove/:productId', [CartController, 'remove'])
+  .use(middleware.auth())
+  .as('cart.remove')

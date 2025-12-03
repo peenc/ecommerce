@@ -4,9 +4,12 @@ import User from '#models/user'
 import hash from '@adonisjs/core/services/hash'
 
 export default class AuthController {
-  showRegister({ view }: HttpContext) {
-    return view.render('pages/register')
+ showRegister({ view, auth, response }: HttpContext) {
+  if (auth.user) {
+    return response.redirect('/')
   }
+  return view.render('pages/register')
+}
 
   async register({ request, response, session }: HttpContext) {
     const schema = vine.object({
@@ -21,7 +24,7 @@ export default class AuthController {
       const data = await validator.validate(request.all())
       // Cria usuário, hash é gerado pelo AuthFinder automaticamente
       const user = await User.create(data)
-      console.log('✅ Cadastro realizado:', user)
+      console.log('Cadastro realizado:', user)
 
       session.flash('success', 'Conta criada com sucesso! Faça login para continuar.')
       return response.redirect('/login')
@@ -29,45 +32,41 @@ export default class AuthController {
       if (error.messages) {
         session.flash('errors', error.messages)
         session.flash('formData', request.only(['fullName', 'email']))
-        console.log('❌ Erros de validação:', error.messages)
+        console.log('Erros de validação:', error.messages)
         return response.redirect().back()
       }
       throw error
     }
   }
 
-  showLogin({ view }: HttpContext) {
-    return view.render('pages/login')
+showLogin({ view, auth, response }: HttpContext) {
+  if (auth.user) {
+    return response.redirect('/')
   }
+  return view.render('pages/login')
+}
 
   async login({ request, response, session, auth }: HttpContext) {
   const { email, password } = request.only(['email', 'password'])
 
   try {
-    // 🔍 Buscar o usuário pelo email
+    // Buscar o usuário pelo email
     const user = await User.findBy('email', email)
-    console.log(user)
-    if (!user) {
+      if (!user) {
       session.flash('error', 'Email ou senha incorretos.')
       return response.redirect().back()
     }
 
-    // 🔑 Verificar a senha usando o mesmo driver que hashou
-    console.log(password)
-    const isPasswordValid = await hash.use('scrypt').verify(user.password,password)
-    console.log(password)
-    if (!isPasswordValid) {
-      console.log("senha inválida")
-      console.log(password)
-      console.log(user.password)
-      session.flash('error', 'Email ou senha incorretos.')
+    // Verificar a senha usando o mesmo driver que hashou
+        const isPasswordValid = await hash.use('scrypt').verify(user.password,password)
+        if (!isPasswordValid) {
+            session.flash('error', 'Email ou senha incorretos.')
       return response.redirect().back()
     }
 
-    // 🚪 Logar manualmente com o guard 'web'
+    // Logar manualmente 
     await auth.use('web').login(user)
-    console.log(user)
-
+       
     session.flash('success', `Bem-vindo de volta, ${user.fullName}!`)
     return response.redirect('/')
   } catch (error) {
@@ -79,7 +78,8 @@ export default class AuthController {
 
 
   async logout({ auth, response }: HttpContext) {
-    await auth.use('web').logout()
-    return response.redirect('/login')
-  }
+  await auth.use('web').logout()
+  return response.redirect('/') 
+}
+
 }

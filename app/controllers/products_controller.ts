@@ -14,25 +14,29 @@ export default class ProductsController {
     return view.render('pages/products/index', { products })
   }
 
-  public async show({ params, view }: HttpContext) {
+  public async show({ params, view, auth }: HttpContext) {
+    await auth.authenticate()
     const product = await Product.findOrFail(params.id)
     await product.load('images')
 
-    return view.render('pages/products/show', { product })
+    return view.render('pages/products/show', { product, auth: { user: auth.user || null }})
   }
 
-  public async create({ view }: HttpContext) {
+  public async create({ view ,auth  }: HttpContext) {
+    await auth.authenticate()
     return view.render('pages/products/create')
   }
 
-  public async edit({ params, view }: HttpContext) {
+  public async edit({ params, view, auth}: HttpContext) {
+    await auth.authenticate()
     const product = await Product.findOrFail(params.id)
 
     return view.render('pages/products/create', { product })
   }
 
-  public async store({ request, response }: HttpContext) {
+  public async store({ request, response, auth}: HttpContext) {
   console.log('📦 Recebendo requisição de criação de produto...')
+  await auth.authenticate()
   try {
     const payload = await request.validateUsing(createProductValidator)
     console.log('✅ Validação passou:', payload)
@@ -65,8 +69,9 @@ export default class ProductsController {
 }
 
 
-  public async update({ params, request, response }: HttpContext) {
+  public async update({ params, request, response, auth }: HttpContext) {
     const product = await Product.findOrFail(params.id)
+    await auth.authenticate()
 
     const payload = await request.validateUsing(createProductValidator)
 

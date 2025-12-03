@@ -13,7 +13,7 @@
         <img 
           src="{{ route('images.show', { name: image.name }) }}" 
           alt="{{ product.name }}" 
-          class="w-64 h-64 object-cover rounded-xl shadow-md"
+          class="max-w-full max-h-full object-scale-down"
         />
       @end
     </div>
@@ -29,11 +29,18 @@
         </p>
       </div>
 
-      <button 
-        class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-3 px-6 rounded-xl shadow-md transition">
-        Comprar agora
-      </button>
+      <form action="{{ route('cart.add') }}" method="POST">
+        {{ csrfField() }}
+
+        <input type="hidden" name="productId" value="{{ product.id }}"/>
+
+        <button 
+          class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-3 px-6 rounded-xl shadow-md transition">
+          Comprar agora
+        </button>
+      </form>
     </div>
+
   </div>
 </div>
 @end
