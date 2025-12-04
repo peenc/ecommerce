@@ -38,13 +38,18 @@ export default class AuthController {
       throw error
     }
   }
-
 showLogin({ view, auth, response }: HttpContext) {
-  if (auth.user) {
-    return response.redirect('/')
+  const user = auth.user || null
+
+  if (user) {
+    return response.redirect().toRoute('home', { auth: { user } })
   }
-  return view.render('pages/login')
+
+  return view.render('pages/login', {
+    auth: { user }
+  })
 }
+
 
   async login({ request, response, session, auth }: HttpContext) {
   const { email, password } = request.only(['email', 'password'])

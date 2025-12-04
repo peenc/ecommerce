@@ -29,10 +29,8 @@ export default class CartController {
   return view.render('pages/cart/showcart', { cart })
 }
 
-
-  async add({ auth, request, response }: HttpContext) {
+  async add({ auth, request, response, session }: HttpContext) {
   const user = auth.user!
-  // garante que o carrinho exista
   let cart = await Cart.findBy('user_id', user.id)
   if (!cart) {
     cart = await Cart.create({ userId: user.id })
@@ -41,32 +39,44 @@ export default class CartController {
   const productId = request.input('productId')
   const product = await Product.findOrFail(productId)
 
-  // busca item existente usando nomes de coluna reais do DB
   let item = await CartItem
     .query()
-    .where('cart_id', cart.id)       // note 'cart_id' em snake_case
-    .where('product_id', product.id) // note 'product_id'
+    .where('cart_id', cart.id)
+    .where('product_id', product.id)
     .first()
 
+  let message = ''
+
   if (item) {
-    // se existir, incrementa quantidade
-    item.quantity = item.quantity + 1
-    item.total = Number((item.quantity * Number(item.price)).toFixed(2))
-    await item.save()
+    if (item.quantity + 1 > product.stock) {
+      message = `Estoque insuficiente para ${product.name}. Máximo disponível: ${product.stock}`
+    } else {
+      item.quantity++
+      item.total = Number((item.quantity * Number(item.price)).toFixed(2))
+      await item.save()
+    }
   } else {
-    // se não existir, cria novo
-    item = await CartItem.create({
-      cartId: cart.id,      // padrão do model (propriedade TS)
-      productId: product.id,
-      quantity: 1,
-      price: product.price,
-      total: product.price,
-    })
+    if (product.stock < 1) {
+      message = `Produto sem estoque: ${product.name}`
+    } else {
+      item = await CartItem.create({
+        cartId: cart.id,
+        productId: product.id,
+        quantity: 1,
+        price: product.price,
+        total: product.price,
+      })
+    }
   }
 
-  // redireciona pro carrinho (mais seguro que back)
+  if (message) {
+    // guarda a mensagem na sessão para mostrar no carrinho
+    session.flash('error', message)
+  }
+
   return response.redirect().toRoute('cart.show')
 }
+
 
 
 
@@ -91,5 +101,79 @@ export default class CartController {
 
     return response.redirect().toRoute('cart.show')
   }
+
+  async checkout({ auth, response }) {
+    const user = auth.user!
+    const cart = await Cart
+      .query()
+      .where('user_id', user.id)
+      .preload('items', i => i.preload('product'))
+      .firstOrFail()
+
+    for (const item of cart.items) {
+      if (item.quantity > item.product.stock) {
+        return response.badRequest({
+          error: `Estoque insuficiente para ${item.product.name}`
+        })
+      }
+    }
+
+    // desconta do estoque
+    for (const item of cart.items) {
+      item.product.stock -= item.quantity
+      await item.product.save()
+    }
+
+    // aqui você criaria o pedido
+
+    // limpa carrinho
+    await cart.related('items').query().delete()
+
+    return response.ok({ message: 'Compra finalizada!' })
+}
+
+async increase({ auth, params, response }: HttpContext) {
+  const user = auth.user!
+  const cart = await Cart.findByOrFail('user_id', user.id)
+
+  const item = await CartItem
+    .query()
+    .where('cart_id', cart.id)
+    .where('product_id', params.productId)
+    .preload('product')
+    .firstOrFail()
+
+  if (item.quantity + 1 > item.product.stock) {
+    return response.badRequest('Estoque insuficiente')
+  }
+
+  item.quantity++
+  item.total = item.quantity * item.price
+  await item.save()
+
+  return response.redirect().toRoute('cart.show')
+}
+
+async decrease({ auth, params, response }: HttpContext) {
+  const user = auth.user!
+  const cart = await Cart.findByOrFail('user_id', user.id)
+
+  const item = await CartItem
+    .query()
+    .where('cart_id', cart.id)
+    .where('product_id', params.productId)
+    .firstOrFail()
+
+  if (item.quantity === 1) {
+    await item.delete()
+  } else {
+    item.quantity--
+    item.total = item.quantity * item.price
+    await item.save()
+  }
+
+  return response.redirect().toRoute('cart.show')
+}
+
 
 }

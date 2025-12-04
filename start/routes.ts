@@ -49,6 +49,9 @@ router
 | Produtos
 |--------------------------------------------------------------------------
 */
+router.post('/products/:id/stock', [ProductsController, 'updateStock']).as('products.updateStock')
+router.post('/products/:id/addstock', [ProductsController, 'addStock']).as('products.addStock')
+
 router.resource('/products', ProductsController).as('products')
 
 /*
@@ -78,3 +81,11 @@ router
   .post('/cart/remove/:productId', [CartController, 'remove'])
   .use(middleware.auth())
   .as('cart.remove')
+
+router.post('/cart/increase/:productId', [CartController, 'increase'])
+.use(middleware.auth())
+.as('cart.increase')
+
+router.post('/cart/decrease/:productId', [CartController, 'decrease'])
+.use(middleware.auth())
+.as('cart.decrease')

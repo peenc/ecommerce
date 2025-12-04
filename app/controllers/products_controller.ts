@@ -1,77 +1,101 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { cuid } from '@adonisjs/core/helpers'
-
 import Product from '#models/product'
-
+import Image from '#models/image'
 import { createProductValidator } from '#validators/product'
 import app from '@adonisjs/core/services/app'
-import Image from '#models/image'
 
 export default class ProductsController {
-  public async index({ view }: HttpContext) {
-    const products = await Product.all()
 
-    return view.render('pages/products/index', { products })
+  public async index({ view, auth }: HttpContext) {
+    const products = await Product.query().preload('images')
+
+    let user = null
+    try {
+      await auth.authenticate()
+      user = auth.user
+    } catch { }
+
+    return view.render('pages/products/index', {
+      products,
+      auth: { user },
+    })
   }
 
   public async show({ params, view, auth }: HttpContext) {
-    await auth.authenticate()
     const product = await Product.findOrFail(params.id)
     await product.load('images')
 
-    return view.render('pages/products/show', { product, auth: { user: auth.user || null }})
+    let user = null
+    try {
+      await auth.authenticate()
+      user = auth.user
+    } catch { }
+
+    return view.render('pages/products/show', { 
+      product,
+      auth: { user },
+    })
   }
 
-  public async create({ view ,auth  }: HttpContext) {
-    await auth.authenticate()
-    return view.render('pages/products/create')
+  public async create({ view, auth }: HttpContext) {
+    let user = null
+    try {
+      await auth.authenticate()
+      user = auth.user
+    } catch { }
+
+    return view.render('pages/products/create', {
+      auth: { user },
+    })
   }
 
-  public async edit({ params, view, auth}: HttpContext) {
-    await auth.authenticate()
+  public async edit({ params, view, auth }: HttpContext) {
     const product = await Product.findOrFail(params.id)
 
-    return view.render('pages/products/create', { product })
+    let user = null
+    try {
+      await auth.authenticate()
+      user = auth.user
+    } catch { }
+
+    return view.render('pages/products/create', { 
+      product,
+      auth: { user },
+    })
   }
 
-  public async store({ request, response, auth}: HttpContext) {
-  console.log('📦 Recebendo requisição de criação de produto...')
-  await auth.authenticate()
-  try {
-    const payload = await request.validateUsing(createProductValidator)
-    console.log('✅ Validação passou:', payload)
+  public async store({ request, response, auth }: HttpContext) {
+    await auth.authenticate()
+    try {
+      const payload = await request.validateUsing(createProductValidator)
 
-    const product = await Product.create({
-      name: payload.name,
-      description: payload.description,
-      price: payload.price,
-    })
-    console.log('✅ Produto criado no banco:', product)
+      const product = await Product.create({
+        name: payload.name,
+        description: payload.description,
+        price: payload.price,
+      })
 
-    const image = new Image()
-    image.name = `${cuid()}.${payload.image.extname}`
-    image.productId = product.id
-    console.log('🖼️ Preparando upload da imagem:', image.name)
+      const image = new Image()
+      image.name = `${cuid()}.${payload.image.extname}`
+      image.productId = product.id
 
-    await payload.image.move(app.makePath('tmp/uploads'), {
-      name: image.name,
-    })
-    console.log('✅ Imagem movida para tmp/uploads')
+      await payload.image.move(app.makePath('tmp/uploads'), {
+        name: image.name,
+      })
 
-    await image.save()
-    console.log('✅ Imagem salva no banco:', image)
+      await image.save()
 
-    return response.redirect().toRoute('products.show', { id: product.id })
-  } catch (error) {
-    console.error('❌ Erro ao criar produto:', error)
-    return response.badRequest('Erro ao criar produto')
+      return response.redirect().toRoute('products.show', { id: product.id })
+    } catch (error) {
+      console.error('Erro ao criar produto:', error)
+      return response.badRequest('Erro ao criar produto')
+    }
   }
-}
-
 
   public async update({ params, request, response, auth }: HttpContext) {
-    const product = await Product.findOrFail(params.id)
     await auth.authenticate()
+    const product = await Product.findOrFail(params.id)
 
     const payload = await request.validateUsing(createProductValidator)
 
@@ -81,11 +105,22 @@ export default class ProductsController {
     return response.redirect().toRoute('products.show', { id: product.id })
   }
 
-  public async destroy({ params, response }: HttpContext) {
+  public async destroy({ params, response, auth }: HttpContext) {
+    await auth.authenticate()
     const product = await Product.findOrFail(params.id)
-
     await product.delete()
 
     return response.redirect().toRoute('products.index')
+  }
+
+  public async addStock({ params, request, response, auth }: HttpContext) {
+    await auth.authenticate()
+    const product = await Product.findOrFail(params.id)
+    const amount = request.input('amount')
+
+    product.stock += Number(amount)
+    await product.save()
+
+    return response.redirect().back()
   }
 }

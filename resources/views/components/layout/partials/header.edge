@@ -15,12 +15,22 @@
           >
             Home
           </a>
+
+          @if(auth.user)
+            <a 
+              href="{{ route('cart.show') }}" 
+              class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:border-indigo-600 transition"
+            >
+              Carrinho
+            </a>
+          @endif
         </div>
       </div>
 
-      <!-- Avatar / Login -->
-      <div class="hidden sm:ml-6 sm:flex sm:items-center">
+      <!-- Avatar / Login / Logout -->
+      <div class="hidden sm:ml-6 sm:flex sm:items-center gap-4">
         @if(auth.user)
+          <!-- Link para perfil -->
           <a href="{{ route('user.profile.edit') }}" class="inline-block">
             <img 
               class="size-8 shrink-0 object-cover rounded-full ring-2 ring-indigo-500 hover:ring-indigo-600 transition"
@@ -28,7 +38,16 @@
               src="{{ auth.user.avatar ? route('images.show', { name: auth.user.avatar }) : 'https://github.com/hunvreus.png' }}"
             >
           </a>
+
+          <!-- Botão logout -->
+          <form action="{{ route('auth.logout') }}" method="POST" class="inline">
+            {{ csrfField() }}
+            <button type="submit" class="text-sm font-medium text-gray-700 hover:text-red-600">
+              Logout
+            </button>
+          </form>
         @else
+          <!-- Usuário não logado -->
           <a href="{{ route('auth.login.show') }}" class="inline-block">
             <img 
               class="size-8 shrink-0 object-cover rounded-full ring-2 ring-gray-300 hover:ring-indigo-500 transition"
