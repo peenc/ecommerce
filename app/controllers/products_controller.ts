@@ -4,6 +4,8 @@ import Product from '#models/product'
 import Image from '#models/image'
 import { createProductValidator } from '#validators/product'
 import app from '@adonisjs/core/services/app'
+import fs from 'fs'
+
 
 export default class ProductsController {
 
@@ -22,21 +24,27 @@ export default class ProductsController {
     })
   }
 
-  public async show({ params, view, auth }: HttpContext) {
-    const product = await Product.findOrFail(params.id)
+public async show({ params, view, auth, response }: HttpContext) {
+  let product = null
+
+  try {
+    product = await Product.findOrFail(params.id)
     await product.load('images')
-
-    let user = null
-    try {
-      await auth.authenticate()
-      user = auth.user
-    } catch { }
-
-    return view.render('pages/products/show', { 
-      product,
-      auth: { user },
-    })
+  } catch {
+    return response.status(404).send(await view.render('pages/errors/not_found'))
   }
+
+  let user = null
+  try {
+    await auth.authenticate()
+    user = auth.user
+  } catch {}
+
+  return view.render('pages/products/show', { 
+    product,
+    auth: { user },
+  })
+}
 
   public async create({ view, auth }: HttpContext) {
     let user = null
@@ -93,17 +101,51 @@ export default class ProductsController {
     }
   }
 
-  public async update({ params, request, response, auth }: HttpContext) {
-    await auth.authenticate()
-    const product = await Product.findOrFail(params.id)
+public async update({ params, request, response, auth }: HttpContext) {
+  await auth.authenticate()
+  const product = await Product.findOrFail(params.id)
 
-    const payload = await request.validateUsing(createProductValidator)
+  const payload = await request.validateUsing(createProductValidator)
 
-    product.merge(payload)
-    await product.save()
+  // Atualiza os campos básicos
+  product.merge({
+    name: payload.name,
+    price: payload.price,
+    description: payload.description,
+  })
 
-    return response.redirect().toRoute('products.show', { id: product.id })
+  await product.save()
+
+  if (payload.image) {
+    const oldImages = await product.related('images').query()
+    for (const img of oldImages) {
+      const filePath = app.makePath('tmp/uploads', img.name)
+
+      try {
+        await fs.promises.unlink(filePath)
+      } catch (e) {
+        console.warn(`Não foi possível deletar ${filePath}`)
+      }
+
+      await img.delete()
+    }
+
+    const file = payload.image
+    const newImage = new Image()
+
+    newImage.name = `${cuid()}.${file.extname}`
+    newImage.productId = product.id
+
+    await file.move(app.makePath('tmp/uploads'), {
+      name: newImage.name,
+    })
+
+    await newImage.save()
   }
+
+  return response.redirect().toRoute('products.show', { id: product.id })
+}
+
 
   public async destroy({ params, response, auth }: HttpContext) {
     await auth.authenticate()
@@ -123,4 +165,22 @@ export default class ProductsController {
 
     return response.redirect().back()
   }
+
+  public async removeStock({ params, request, response, auth }: HttpContext) {
+  await auth.authenticate()
+
+  const product = await Product.findOrFail(params.id)
+  const amount = Number(request.input('amount'))
+
+  // evita estoque negativo
+  if (product.stock - amount < 0) {
+    return response.badRequest('Estoque não pode ficar negativo')
+  }
+
+  product.stock -= amount
+  await product.save()
+
+  return response.redirect().back()
+}
+
 }

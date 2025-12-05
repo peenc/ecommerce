@@ -49,11 +49,26 @@ router
 | Produtos
 |--------------------------------------------------------------------------
 */
-router.post('/products/:id/stock', [ProductsController, 'updateStock']).as('products.updateStock')
-router.post('/products/:id/addstock', [ProductsController, 'addStock']).as('products.addStock')
 
-router.resource('/products', ProductsController).as('products')
+router
+  .group(() => {
+    router.get('/products/create', [ProductsController, 'create']).as('products.create')
+    router.post('/products', [ProductsController, 'store']).as('products.store')
+    router.get('/products/:id/edit', [ProductsController, 'edit']).as('products.edit')
+    router.put('/products/:id', [ProductsController, 'update']).as('products.update')
+    router.delete('/products/:id', [ProductsController, 'destroy']).as('products.destroy')
+    router.get('/products', [ProductsController, 'index']).as('products.index')
+  
+    // controle de estoque
+    router.post('/products/:id/stock', [ProductsController, 'updateStock']).as('products.updateStock')
+    router.post('/products/:id/addstock', [ProductsController, 'addStock']).as('products.addStock')
+    router.post('/products/:id/removestock', [ProductsController, 'removeStock']).as('products.removeStock')
 
+  })
+  .use([middleware.auth(), middleware.admin()])
+
+
+router.get('/products/:id', [ProductsController, 'show']).as('products.show')
 /*
 |--------------------------------------------------------------------------
 | Imagens

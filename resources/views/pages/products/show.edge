@@ -3,7 +3,7 @@
 @slot('main')
 <div class="max-w-4xl mx-auto mt-10 bg-white shadow-lg rounded-2xl p-6">
   <h1 class="text-3xl font-bold mb-6 text-gray-800 text-center">
-    {{ product.name }}
+ 
   </h1>
 
   <div class="flex flex-col md:flex-row gap-6">
@@ -40,7 +40,7 @@
           class="{{ product.stock < 1 ? 'bg-gray-300 cursor-not-allowed hover:bg-gray-300' : 'bg-yellow-400 hover:bg-yellow-500' }} text-gray-900 font-bold py-3 px-6 rounded-xl shadow-md transition"
           {{ product.stock < 1 ? 'disabled' : '' }}
         >
-          {{ product.stock < 1 ? 'Esgotado' : 'Comprar agora' }}
+          {{ product.stock < 1 ? 'Esgotado' : 'Adicionar ao carrinho' }}
         </button>
       </form>
     </div>

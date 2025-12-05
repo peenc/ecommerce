@@ -22,7 +22,6 @@ export default class AuthController {
 
     try {
       const data = await validator.validate(request.all())
-      // Cria usuário, hash é gerado pelo AuthFinder automaticamente
       const user = await User.create(data)
       console.log('Cadastro realizado:', user)
 
@@ -49,7 +48,6 @@ showLogin({ view, auth, response }: HttpContext) {
     auth: { user }
   })
 }
-
 
   async login({ request, response, session, auth }: HttpContext) {
   const { email, password } = request.only(['email', 'password'])
@@ -80,7 +78,6 @@ showLogin({ view, auth, response }: HttpContext) {
     return response.redirect().back()
   }
 }
-
 
   async logout({ auth, response }: HttpContext) {
   await auth.use('web').logout()

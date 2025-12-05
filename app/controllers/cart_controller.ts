@@ -124,8 +124,6 @@ export default class CartController {
       await item.product.save()
     }
 
-    // aqui você criaria o pedido
-
     // limpa carrinho
     await cart.related('items').query().delete()
 
